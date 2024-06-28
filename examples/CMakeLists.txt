@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 
-set(examples fib nqueens cilksort)
+set(examples fib nqueens cilksort test)
 
 foreach(example IN LISTS examples)
+  add_compile_options(-fomit-frame-pointer)
   add_executable(${example}.out ${example}.cpp)
   target_link_libraries(${example}.out itoyori)
 

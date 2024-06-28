@@ -113,3 +113,5 @@ option(BUILD_EXAMPLES "Build and install examples" ON)
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
+
+add_subdirectory(benchmarks)

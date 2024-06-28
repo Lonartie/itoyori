@@ -1,5 +1,8 @@
 build/
 
+cmake-build-*
+.idea/
+
 # C++
 # https://github.com/github/gitignore/blob/main/C++.gitignore
 

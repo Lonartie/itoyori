@@ -26,6 +26,7 @@
  */
 
 #include "ityr/ityr.hpp"
+#include "log.h"
 
 using result_t = uint64_t;
 using state_t = char;
@@ -82,6 +83,7 @@ struct board {
 };
 
 result_t nqueens(int n, int j, board b, int depth) {
+  ityr_log("");
   if (n == j) {
     /* good solution, count it */
     return 1;

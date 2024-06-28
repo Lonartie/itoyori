@@ -1,4 +1,5 @@
 #include "ityr/ityr.hpp"
+#include "log.h"
 
 using result_t = uint64_t;
 
@@ -18,6 +19,8 @@ result_t fib_fast(int n) {
 }
 
 result_t fib_rec(int n) {
+  ityr_log(std::to_string(n));
+  std::this_thread::sleep_for(std::chrono::microseconds(1));
   if (n <= 1) {
     return 1;
   } else {
@@ -77,6 +80,8 @@ void show_help_and_exit(int argc [[maybe_unused]], char** argv) {
 
 int main(int argc, char** argv) {
   ityr::init();
+
+  ityr_log("init");
 
   int opt;
   while ((opt = getopt(argc, argv, "n:r:v:ph")) != EOF) {

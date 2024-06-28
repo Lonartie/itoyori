@@ -1,0 +1,9 @@
+#!/bin/bash
+cd /media/psf/git/itoyori
+rm -rf build
+mkdir build
+cd build
+cmake ../ -DCMAKE_BUILD_TYPE=Release
+make $1.out
+cd examples
+time mpirun -f /media/psf/git/itoyori/machinefile setarch $(uname -m) --addr-no-randomize ./$1.out
