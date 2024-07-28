@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-set(examples fib nqueens mandelbrot)
+set(examples fib nqueens)
 
 foreach(example IN LISTS examples)
 
