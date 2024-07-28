@@ -1,5 +1,11 @@
 #!/bin/bash
-cd /media/psf/git/itoyori/build
-make $1.out
-cd examples
-time mpirun -f /media/psf/git/itoyori/machinefile setarch $(uname -m) --addr-no-randomize ./$1.out
+export CC=/usr/bin/clang-18
+export CXX=/usr/bin/clang++-18
+
+cd /media/psf/git/itoyori
+#rm -rf build
+#mkdir build
+cd build
+#cmake ../ -DCMAKE_BUILD_TYPE=Release
+make $2.out
+time mpirun -f /media/psf/git/itoyori/machinefile setarch $(uname -m) --addr-no-randomize ./$1/$2.out

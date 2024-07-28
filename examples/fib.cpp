@@ -1,10 +1,9 @@
 #include "ityr/ityr.hpp"
-#include "log.h"
 
 using result_t = uint64_t;
 
-int  n_input       = 20;
-int  n_repeats     = 10;
+int n_input = 20;
+int n_repeats = 10;
 bool verify_result = true;
 bool print_options = false;
 
@@ -18,18 +17,16 @@ result_t fib_fast(int n) {
   return px[0] + px[1];
 }
 
-result_t fib_rec(int n) {
-  ityr_log(std::to_string(n));
-  std::this_thread::sleep_for(std::chrono::microseconds(1));
-  if (n <= 1) {
+uint64_t fib_rec(int n) {
+  if (n <= 1)
     return 1;
-  } else {
-    auto [x, y] =
-      ityr::parallel_invoke(
-          [=] { return fib_rec(n - 1); },
-          [=] { return fib_rec(n - 2); });
-    return x + y;
-  }
+
+  auto [x, y] = ityr::parallel_invoke(
+    [=] { return fib_rec(n - 1); },
+    [=] { return fib_rec(n - 2); }
+  );
+
+  return x + y;
 }
 
 void run() {
@@ -38,9 +35,7 @@ void run() {
 
     auto t0 = ityr::gettime_ns();
 
-    result_t result = ityr::root_exec([=] {
-      return fib_rec(n_input);
-    });
+    result_t result = ityr::root_exec([=] { return fib_rec(n_input); });
 
     auto t1 = ityr::gettime_ns();
 
@@ -54,8 +49,8 @@ void run() {
         if (result == answer) {
           printf(" - Result verified: fib(%d) = %ld", n_input, result);
         } else {
-          printf(" - Wrong result: fib(%d) should be %ld but got %ld",
-                 n_input, answer, result);
+          printf(" - Wrong result: fib(%d) should be %ld but got %ld", n_input,
+                 answer, result);
         }
       }
 
@@ -67,40 +62,39 @@ void run() {
   }
 }
 
-void show_help_and_exit(int argc [[maybe_unused]], char** argv) {
+void show_help_and_exit(int argc [[maybe_unused]], char **argv) {
   if (ityr::is_master()) {
     printf("Usage: %s [options]\n"
            "  options:\n"
            "    -n : input size (int)\n"
            "    -r : # of repeats (int)\n"
-           "    -v : verify the result (int)\n", argv[0]);
+           "    -v : verify the result (int)\n",
+           argv[0]);
   }
   exit(1);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ityr::init();
-
-  ityr_log("init");
 
   int opt;
   while ((opt = getopt(argc, argv, "n:r:v:ph")) != EOF) {
     switch (opt) {
-      case 'n':
-        n_input = atoi(optarg);
-        break;
-      case 'r':
-        n_repeats = atoi(optarg);
-        break;
-      case 'v':
-        verify_result = atoi(optarg);
-        break;
-      case 'p':
-        print_options = true;
-        break;
-      case 'h':
-      default:
-        show_help_and_exit(argc, argv);
+    case 'n':
+      n_input = atoi(optarg);
+      break;
+    case 'r':
+      n_repeats = atoi(optarg);
+      break;
+    case 'v':
+      verify_result = atoi(optarg);
+      break;
+    case 'p':
+      print_options = true;
+      break;
+    case 'h':
+    default:
+      show_help_and_exit(argc, argv);
     }
   }
 
