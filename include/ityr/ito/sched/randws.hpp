@@ -1,19 +1,20 @@
 #pragma once
 
-#include "ityr/common/util.hpp"
-#include "ityr/common/mpi_util.hpp"
-#include "ityr/common/mpi_rma.hpp"
-#include "ityr/common/topology.hpp"
-#include "ityr/common/logger.hpp"
 #include "ityr/common/allocator.hpp"
+#include "ityr/common/logger.hpp"
+#include "ityr/common/mpi_rma.hpp"
+#include "ityr/common/mpi_util.hpp"
 #include "ityr/common/profiler.hpp"
-#include "ityr/ito/util.hpp"
-#include "ityr/ito/options.hpp"
-#include "ityr/ito/context.hpp"
+#include "ityr/common/topology.hpp"
+#include "ityr/common/util.hpp"
 #include "ityr/ito/callstack.hpp"
-#include "ityr/ito/wsqueue.hpp"
+#include "ityr/ito/context.hpp"
+#include "ityr/ito/options.hpp"
 #include "ityr/ito/prof_events.hpp"
 #include "ityr/ito/sched/util.hpp"
+#include "ityr/ito/util.hpp"
+#include "ityr/ito/wsqueue.hpp"
+#include "profiling/prof.hpp"
 
 namespace ityr::ito {
 
@@ -505,6 +506,7 @@ private:
 
   template <typename Fn>
   void suspend(Fn&& fn) {
+    FUNC_PROF
     context_frame*        prev_cf_top = cf_top_;
     thread_local_storage* prev_tls    = tls_;
 
@@ -521,11 +523,13 @@ private:
   }
 
   void resume(context_frame* cf) {
+    FUNC_PROF
     common::verbose("Resume context frame [%p, %p) in the stack", cf, cf->parent_frame);
     context::resume(cf);
   }
 
   void resume(suspended_state ss) {
+    FUNC_PROF
     common::verbose("Resume context frame [%p, %p) evacuated at %p",
                     ss.frame_base, ss.frame_size, ss.evacuation_ptr);
 
@@ -547,11 +551,13 @@ private:
   }
 
   void resume_sched() {
+    FUNC_PROF
     common::verbose("Resume scheduler context");
     context::resume(sched_cf_);
   }
 
   void execute_migrated_task(const suspended_state& ss) {
+    FUNC_PROF
     ITYR_CHECK(ss.evacuation_ptr);
     common::verbose("Received a continuation of the root thread");
     common::profiler::switch_phase<prof_phase_sched_loop, prof_phase_sched_resume_migrate>();
@@ -563,6 +569,7 @@ private:
   }
 
   suspended_state evacuate(context_frame* cf) {
+    FUNC_PROF
     std::size_t cf_size = reinterpret_cast<uintptr_t>(cf->parent_frame) - reinterpret_cast<uintptr_t>(cf);
     void* evacuation_ptr = suspended_thread_allocator_.allocate(cf_size);
     std::memcpy(evacuation_ptr, cf, cf_size);
@@ -575,6 +582,7 @@ private:
 
   template <typename Fn>
   void root_on_stack(Fn&& fn) {
+    FUNC_PROF
     cf_top_ = stack_base_;
     std::size_t stack_size_bytes = reinterpret_cast<std::byte*>(stack_base_) -
                                    reinterpret_cast<std::byte*>(stack_.top());
@@ -586,6 +594,7 @@ private:
   }
 
   void execute_coll_task(task_general* t, coll_task ct) {
+    FUNC_PROF
     // TODO: consider copy semantics for tasks
     coll_task ct_ {t, ct.task_size, ct.master_rank};
 
@@ -626,6 +635,7 @@ private:
   }
 
   void execute_coll_task_if_arrived() {
+    FUNC_PROF
     auto ct = coll_task_mailbox_.pop();
     if (ct.has_value()) {
       task_general* t = reinterpret_cast<task_general*>(
@@ -672,6 +682,7 @@ private:
 
   template <typename T>
   thread_retval<T> get_retval_remote(thread_state<T>* ts) {
+    FUNC_PROF
     if constexpr (std::is_trivially_copyable_v<T>) {
       return remote_get_value(thread_state_allocator_, &ts->retval);
     } else {

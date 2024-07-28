@@ -28,7 +28,7 @@ target_include_directories(itoyori INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/massivelogger/include>
   $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(itoyori INTERFACE ${MPI_CXX_LIBRARIES} rt)
+target_link_libraries(itoyori INTERFACE ${MPI_CXX_LIBRARIES} rt profiling)
 target_compile_options(itoyori INTERFACE -Wall -Wextra -fno-stack-protector)
 
 if(MPI_CXX_COMPILE_FLAGS)
