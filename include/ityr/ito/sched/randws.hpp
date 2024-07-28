@@ -506,7 +506,7 @@ private:
 
   template <typename Fn>
   void suspend(Fn&& fn) {
-    SEC_PROF_BEGIN("suspend");
+    // SEC_PROF_BEGIN("suspend");
     context_frame*        prev_cf_top = cf_top_;
     thread_local_storage* prev_tls    = tls_;
 
@@ -515,7 +515,7 @@ private:
       context_frame*& cf_top = *reinterpret_cast<context_frame**>(cf_top_p);
       Fn              fn     = std::forward<Fn>(*reinterpret_cast<Fn*>(fn_p)); // copy closure to the new stack frame
       cf_top = cf;
-      SEC_PROF_END("suspend");
+      // SEC_PROF_END("suspend");
       fn(cf);
     }, &cf_top_, &fn, prev_tls);
 

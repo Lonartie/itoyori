@@ -7,9 +7,7 @@ uint64_t fib(uint64_t n);
 
 int main(int argc, char** argv) {
    ityr::init();
-   auto csv = std::make_unique<std::ofstream>(prof::work_dir(argv) + "/" + std::to_string(ityr::my_rank()) + ".csv");
-   auto json = nullptr;
-   prof::initialize_prof(std::move(csv), std::move(json));
+   ityr::profiler_begin();
 
    const int iterations = argc > 1 ? std::stoi(argv[1]) : 10;
    const int input = argc > 2 ? std::stoi(argv[2]) : 20;
@@ -21,7 +19,8 @@ int main(int argc, char** argv) {
       }
    });
 
-   prof::finalize_prof();
+   ityr::profiler_end();
+   ityr::profiler_flush();
    ityr::fini();
 }
 
