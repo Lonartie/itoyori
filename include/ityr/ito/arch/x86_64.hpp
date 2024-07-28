@@ -88,7 +88,6 @@ public:
   }
 
   static void resume(context_frame* cf) {
-    FUNC_PROF
     asm volatile (
         "mov  %0, %%rsp\n\t"
         "ret\n\t"
@@ -106,7 +105,6 @@ public:
                             void*              arg1,
                             void*              arg2,
                             void*              arg3) {
-    FUNC_PROF
     uintptr_t sp = reinterpret_cast<uintptr_t>(stack_buf) + stack_size - 1;
     sp &= 0xFFFFFFFFFFFFFFF0;
 
@@ -136,7 +134,6 @@ public:
                             void*              arg1,
                             void*              arg2,
                             void*              arg3) {
-    FUNC_PROF
     uintptr_t sp = reinterpret_cast<uintptr_t>(stack_ptr) & 0xFFFFFFFFFFFFFFF0;
 
     asm volatile (
