@@ -3,6 +3,7 @@
 #include "ityr/common/util.hpp"
 #include "ityr/ito/ito.hpp"
 #include "ityr/ori/ori.hpp"
+#include "profiling/prof.hpp"
 
 namespace ityr {
 
@@ -45,6 +46,7 @@ namespace ityr {
  */
 template <typename Fn, typename... Args>
 inline auto root_exec(Fn&& fn, Args&&... args) {
+  FUNC_PROF
   ITYR_CHECK(ito::is_spmd());
 
   ori::release();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ityr/common/util.hpp"
+#include "profiling/prof.hpp"
 
 namespace ityr::ito {
 
@@ -36,6 +37,7 @@ public:
                                      void*             arg0,
                                      void*             arg1,
                                      void*             saved_ptr = nullptr) {
+    FUNC_PROF
     register void* parent_cf_r8  asm("r8")  = reinterpret_cast<void*>(parent_cf);
     register void* fn_r9         asm("r9")  = reinterpret_cast<void*>(fn);
     register void* saved_ptr_r10 asm("r10") = reinterpret_cast<void*>(saved_ptr);
@@ -86,6 +88,7 @@ public:
   }
 
   static void resume(context_frame* cf) {
+    FUNC_PROF
     asm volatile (
         "mov  %0, %%rsp\n\t"
         "ret\n\t"
@@ -103,6 +106,7 @@ public:
                             void*              arg1,
                             void*              arg2,
                             void*              arg3) {
+    FUNC_PROF
     uintptr_t sp = reinterpret_cast<uintptr_t>(stack_buf) + stack_size - 1;
     sp &= 0xFFFFFFFFFFFFFFF0;
 
@@ -132,6 +136,7 @@ public:
                             void*              arg1,
                             void*              arg2,
                             void*              arg3) {
+    FUNC_PROF
     uintptr_t sp = reinterpret_cast<uintptr_t>(stack_ptr) & 0xFFFFFFFFFFFFFFF0;
 
     asm volatile (
