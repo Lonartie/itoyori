@@ -9,4 +9,7 @@ foreach(example IN LISTS examples)
   target_link_libraries(${example}.out itoyori)
   target_compile_options(${example}.out PRIVATE -DITYR_ITO_SCHEDULER=randws)
 
+  install(TARGETS ${example}.out
+          DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/itoyori/examples")
+
 endforeach()
