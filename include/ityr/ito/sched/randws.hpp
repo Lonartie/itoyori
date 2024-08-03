@@ -14,7 +14,6 @@
 #include "ityr/ito/sched/util.hpp"
 #include "ityr/ito/util.hpp"
 #include "ityr/ito/wsqueue.hpp"
-#include "profiling/prof.hpp"
 
 namespace ityr::ito {
 

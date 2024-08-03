@@ -1,4 +1,3 @@
-#include <profiling/prof.hpp>
 #include <ityr/ityr.hpp>
 
 static volatile uint64_t result;

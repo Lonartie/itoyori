@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ityr/common/util.hpp"
-#include "profiling/prof.hpp"
 
 namespace ityr::ito {
 
@@ -37,7 +36,6 @@ public:
                                      void*             arg0,
                                      void*             arg1,
                                      void*             saved_ptr = nullptr) {
-    FUNC_PROF
     register void* parent_cf_r8  asm("r8")  = reinterpret_cast<void*>(parent_cf);
     register void* fn_r9         asm("r9")  = reinterpret_cast<void*>(fn);
     register void* saved_ptr_r10 asm("r10") = reinterpret_cast<void*>(saved_ptr);
