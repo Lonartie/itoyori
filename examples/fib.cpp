@@ -20,6 +20,14 @@ int main(int argc, char** argv) {
 
    ityr::profiler_end();
    ityr::profiler_flush();
+
+   printf("GET:      %llu", ityr::common::GET_DATA_SIZE);
+   printf("PUT:      %llu", ityr::common::PUT_DATA_SIZE);
+   printf("CAS:      %llu", ityr::common::CAS_DATA_SIZE);
+   printf("FAA:      %llu", ityr::common::FAA_DATA_SIZE);
+   printf("FAO_GET:  %llu", ityr::common::FAO_GET_DATA_SIZE);
+   printf("FAO_PUT:  %llu", ityr::common::FAO_PUT_DATA_SIZE);
+
    ityr::fini();
 }
 
