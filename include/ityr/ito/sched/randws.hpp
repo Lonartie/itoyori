@@ -17,6 +17,8 @@
 
 namespace ityr::ito {
 
+  static std::size_t CURRENT_CONTEXT_FRAME_SIZE = 0;
+
 class scheduler_randws {
 public:
   struct suspended_state {
@@ -150,6 +152,7 @@ public:
       common::verbose<2>("Starting new thread %p", ts);
       common::profiler::switch_phase<prof_phase_sched_fork, prof_phase_thread>();
 
+      CURRENT_CONTEXT_FRAME_SIZE = reinterpret_cast<uintptr_t>(cf->parent_frame) - reinterpret_cast<uintptr_t>(cf);
       T&& ret = invoke_fn<T>(std::forward<decltype(fn)>(fn), std::forward<decltype(args_tuple)>(args_tuple));
 
       common::profiler::switch_phase<prof_phase_thread, prof_phase_sched_die>();
@@ -557,7 +560,6 @@ private:
     ITYR_CHECK(ss.evacuation_ptr);
     common::verbose("Received a continuation of the root thread");
     common::profiler::switch_phase<prof_phase_sched_loop, prof_phase_sched_resume_migrate>();
-
     suspend([&](context_frame* cf) {
       sched_cf_ = cf;
       resume(ss);

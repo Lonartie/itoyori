@@ -25,6 +25,12 @@ template <>           inline MPI_Datatype mpi_type<unsigned long>() { return MPI
 template <>           inline MPI_Datatype mpi_type<bool>()          { return MPI_CXX_BOOL;          }
 template <>           inline MPI_Datatype mpi_type<void*>()         { return mpi_type<uintptr_t>(); }
 
+  static std::size_t MPI_RECV_SIZE = 0;
+  static std::size_t MPI_SEND_SIZE = 0;
+  static std::size_t MPI_BROADCAST_SIZE = 0;
+  static std::size_t MPI_SEND_CALLS = 0;
+  static std::size_t MPI_RECV_CALLS = 0;
+
 inline int mpi_comm_rank(MPI_Comm comm) {
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -55,6 +61,8 @@ inline void mpi_send(const T*    buf,
                      int         target_rank,
                      int         tag,
                      MPI_Comm    comm) {
+  MPI_SEND_SIZE += sizeof(T) * count;
+  MPI_SEND_CALLS++;
   MPI_Send(buf,
            sizeof(T) * count,
            MPI_BYTE,
@@ -69,6 +77,8 @@ inline MPI_Request mpi_isend(const T*    buf,
                              int         target_rank,
                              int         tag,
                              MPI_Comm    comm) {
+  MPI_SEND_SIZE += sizeof(T) * count;
+  MPI_SEND_CALLS++;
   MPI_Request req;
   MPI_Isend(buf,
             sizeof(T) * count,
@@ -94,6 +104,8 @@ inline void mpi_recv(T*          buf,
                      int         target_rank,
                      int         tag,
                      MPI_Comm    comm) {
+  MPI_RECV_SIZE += sizeof(T) * count;
+  MPI_RECV_CALLS++;
   MPI_Recv(buf,
            sizeof(T) * count,
            MPI_BYTE,
@@ -109,6 +121,8 @@ inline MPI_Request mpi_irecv(T*          buf,
                              int         target_rank,
                              int         tag,
                              MPI_Comm    comm) {
+  MPI_RECV_SIZE += sizeof(T) * count;
+  MPI_RECV_CALLS++;
   MPI_Request req;
   MPI_Irecv(buf,
             sizeof(T) * count,
@@ -134,6 +148,7 @@ inline void mpi_bcast(T*          buf,
                       std::size_t count,
                       int         root_rank,
                       MPI_Comm    comm) {
+  MPI_BROADCAST_SIZE += sizeof(T) * count;
   MPI_Bcast(buf,
             sizeof(T) * count,
             MPI_BYTE,

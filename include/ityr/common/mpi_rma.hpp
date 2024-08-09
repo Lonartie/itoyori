@@ -44,12 +44,12 @@ inline void mpi_win_flush_all(MPI_Win win) {
 #endif
 }
 
-  static std::size_t GET_DATA_SIZE = 0;
-  static std::size_t PUT_DATA_SIZE = 0;
-  static std::size_t CAS_DATA_SIZE = 0;
-  static std::size_t FAA_DATA_SIZE = 0;
-  static std::size_t FAO_GET_DATA_SIZE = 0;
-  static std::size_t FAO_PUT_DATA_SIZE = 0;
+  static std::size_t RMA_GET_DATA_SIZE = 0;
+  static std::size_t RMA_PUT_DATA_SIZE = 0;
+  static std::size_t RMA_CAS_DATA_SIZE = 0;
+  static std::size_t RMA_FAA_DATA_SIZE = 0;
+  static std::size_t RMA_FAO_GET_DATA_SIZE = 0;
+  static std::size_t RMA_FAO_PUT_DATA_SIZE = 0;
 
 template <typename T>
 inline void mpi_get_nb(T*          origin,
@@ -62,7 +62,7 @@ inline void mpi_get_nb(T*          origin,
   ucs_trace_func("origin: %d, target: %d, %ld bytes", topology::my_rank(), target_rank, sizeof(T) * count);
 #endif
   ITYR_CHECK(win != MPI_WIN_NULL);
-  GET_DATA_SIZE += sizeof(T) * count;
+  RMA_GET_DATA_SIZE += sizeof(T) * count;
   MPI_Get(origin,
           sizeof(T) * count,
           MPI_BYTE,
@@ -93,7 +93,7 @@ inline MPI_Request mpi_rget(T*          origin,
 #if ITYR_DEBUG_UCX
   ucs_trace_func("origin: %d, target: %d, %ld bytes", topology::my_rank(), target_rank, sizeof(T) * count);
 #endif
-  GET_DATA_SIZE += sizeof(T) * count;
+  RMA_GET_DATA_SIZE += sizeof(T) * count;
   MPI_Request req;
   MPI_Rget(origin,
            sizeof(T) * count,
@@ -127,7 +127,7 @@ inline void mpi_put_nb(const T*    origin,
   ucs_trace_func("origin: %d, target: %d, %ld bytes", topology::my_rank(), target_rank, sizeof(T) * count);
 #endif
   ITYR_CHECK(win != MPI_WIN_NULL);
-  PUT_DATA_SIZE += sizeof(T) * count;
+  RMA_PUT_DATA_SIZE += sizeof(T) * count;
   MPI_Put(origin,
           sizeof(T) * count,
           MPI_BYTE,
@@ -158,7 +158,7 @@ inline MPI_Request mpi_rput(const T*    origin,
 #if ITYR_DEBUG_UCX
   ucs_trace_func("origin: %d, target: %d, %ld bytes", topology::my_rank(), target_rank, sizeof(T) * count);
 #endif
-  PUT_DATA_SIZE += sizeof(T) * count;
+  RMA_PUT_DATA_SIZE += sizeof(T) * count;
   MPI_Request req;
   MPI_Rput(origin,
            sizeof(T) * count,
@@ -191,7 +191,7 @@ inline void mpi_atomic_faa_nb(const T*    origin,
   ucs_trace_func("origin: %d, target: %d", topology::my_rank(), target_rank);
 #endif
   ITYR_CHECK(win != MPI_WIN_NULL);
-  FAA_DATA_SIZE += sizeof(T);
+  RMA_FAA_DATA_SIZE += sizeof(T);
   MPI_Fetch_and_op(origin,
                    result,
                    mpi_type<T>(),
@@ -221,7 +221,7 @@ inline void mpi_atomic_cas_nb(const T*    origin,
                               MPI_Win     win) {
   ITYR_PROFILER_RECORD(prof_event_mpi_rma_atomic_cas, target_rank);
   ITYR_CHECK(win != MPI_WIN_NULL);
-  CAS_DATA_SIZE += sizeof(T);
+  RMA_CAS_DATA_SIZE += sizeof(T);
   MPI_Compare_and_swap(origin,
                        compare,
                        result,
@@ -253,7 +253,7 @@ inline void mpi_atomic_get_nb(T*          origin,
   ucs_trace_func("origin: %d, target: %d", topology::my_rank(), target_rank);
 #endif
   ITYR_CHECK(win != MPI_WIN_NULL);
-  FAO_GET_DATA_SIZE += sizeof(T);
+  RMA_FAO_GET_DATA_SIZE += sizeof(T);
   MPI_Fetch_and_op(nullptr,
                    origin,
                    mpi_type<T>(),
@@ -284,7 +284,7 @@ inline void mpi_atomic_put_nb(const T*    origin,
   ucs_trace_func("origin: %d, target: %d", topology::my_rank(), target_rank);
 #endif
   ITYR_CHECK(win != MPI_WIN_NULL);
-  FAO_PUT_DATA_SIZE += sizeof(T);
+  RMA_FAO_PUT_DATA_SIZE += sizeof(T);
   MPI_Fetch_and_op(origin,
                    result,
                    mpi_type<T>(),

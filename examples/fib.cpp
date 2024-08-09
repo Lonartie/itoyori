@@ -4,6 +4,9 @@ static volatile uint64_t result;
 
 uint64_t fib(uint64_t n);
 
+static std::size_t min_frame_size = std::numeric_limits<std::size_t>::max();
+static std::size_t max_frame_size = std::numeric_limits<std::size_t>::min();
+
 int main(int argc, char** argv) {
    ityr::init();
    ityr::profiler_begin();
@@ -14,30 +17,164 @@ int main(int argc, char** argv) {
    ityr::root_exec([=]() -> void {
       for (int i = 0; i < iterations; i++) {
          result = fib(input);
-         std::cout << "iteration #" << i+1 << " done\n";
+         std::cout << "iteration #" << i + 1 << " done\n";
       }
    });
 
    ityr::profiler_end();
    ityr::profiler_flush();
 
-   printf("GET:      %llu", ityr::common::GET_DATA_SIZE);
-   printf("PUT:      %llu", ityr::common::PUT_DATA_SIZE);
-   printf("CAS:      %llu", ityr::common::CAS_DATA_SIZE);
-   printf("FAA:      %llu", ityr::common::FAA_DATA_SIZE);
-   printf("FAO_GET:  %llu", ityr::common::FAO_GET_DATA_SIZE);
-   printf("FAO_PUT:  %llu", ityr::common::FAO_PUT_DATA_SIZE);
+   ityr::root_exec([=]() -> void {
+      ityr::global_vector<std::size_t> get(ityr::n_ranks()), put(ityr::n_ranks()), cas(ityr::n_ranks()),
+            faa(ityr::n_ranks()), faog(ityr::n_ranks()), faop(ityr::n_ranks()), send(ityr::n_ranks()),
+            recv(ityr::n_ranks()), brdc(ityr::n_ranks()), rcvc(ityr::n_ranks()), sendc(ityr::n_ranks());
+      ityr::global_span<std::size_t> sget(get), sput(put), scas(cas), sfaa(faa), sfaog(faog), sfaop(faop), ssend(send),
+            srecv(recv), sbrdc(brdc), srcvc(rcvc), ssendc(sendc);
 
+      ityr::coll_exec([=]() {
+         auto cget = ityr::make_checkout(sget, ityr::checkout_mode::read_write);
+         cget[ityr::my_rank()] = ityr::common::RMA_GET_DATA_SIZE;
+
+         auto cput = ityr::make_checkout(sput, ityr::checkout_mode::read_write);
+         cput[ityr::my_rank()] = ityr::common::RMA_PUT_DATA_SIZE;
+
+         auto ccas = ityr::make_checkout(scas, ityr::checkout_mode::read_write);
+         ccas[ityr::my_rank()] = ityr::common::RMA_CAS_DATA_SIZE;
+
+         auto cfaa = ityr::make_checkout(sfaa, ityr::checkout_mode::read_write);
+         cfaa[ityr::my_rank()] = ityr::common::RMA_FAA_DATA_SIZE;
+
+         auto cfaog = ityr::make_checkout(sfaog, ityr::checkout_mode::read_write);
+         cfaog[ityr::my_rank()] = ityr::common::RMA_FAO_GET_DATA_SIZE;
+
+         auto cfaop = ityr::make_checkout(sfaop, ityr::checkout_mode::read_write);
+         cfaop[ityr::my_rank()] = ityr::common::RMA_FAO_PUT_DATA_SIZE;
+
+         auto csend = ityr::make_checkout(ssend, ityr::checkout_mode::read_write);
+         csend[ityr::my_rank()] = ityr::common::MPI_SEND_SIZE;
+
+         auto crecv = ityr::make_checkout(srecv, ityr::checkout_mode::read_write);
+         crecv[ityr::my_rank()] = ityr::common::MPI_RECV_SIZE;
+
+         auto cbrdc = ityr::make_checkout(sbrdc, ityr::checkout_mode::read_write);
+         cbrdc[ityr::my_rank()] = ityr::common::MPI_BROADCAST_SIZE;
+
+         auto crecvc = ityr::make_checkout(srcvc, ityr::checkout_mode::read_write);
+         crecvc[ityr::my_rank()] = ityr::common::MPI_RECV_SIZE;
+
+         auto csendc = ityr::make_checkout(ssendc, ityr::checkout_mode::read_write);
+         csendc[ityr::my_rank()] = ityr::common::MPI_BROADCAST_SIZE;
+      });
+
+      {
+         auto cget = ityr::make_checkout(sget, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cget) {
+            sum += v;
+         }
+         printf("get: %llu\n", sum);
+      }
+
+      {
+         auto cput = ityr::make_checkout(sput, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cput) {
+            sum += v;
+         }
+         printf("put: %llu\n", sum);
+      }
+
+      {
+         auto ccas = ityr::make_checkout(scas, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: ccas) {
+            sum += v;
+         }
+         printf("cas: %llu\n", sum);
+      }
+
+      {
+         auto cfaa = ityr::make_checkout(sfaa, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cfaa) {
+            sum += v;
+         }
+         printf("faa: %llu\n", sum);
+      }
+
+      {
+         auto cfaog = ityr::make_checkout(sfaog, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cfaog) {
+            sum += v;
+         }
+         printf("faog: %llu\n", sum);
+      }
+
+      {
+         auto cfaop = ityr::make_checkout(sfaop, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cfaop) {
+            sum += v;
+         }
+         printf("faop: %llu\n", sum);
+      }
+
+      {
+         auto csend = ityr::make_checkout(ssend, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: csend) {
+            sum += v;
+         }
+         printf("send: %llu\n", sum);
+      }
+
+      {
+         auto crecv = ityr::make_checkout(srecv, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: crecv) {
+            sum += v;
+         }
+         printf("recv: %llu\n", sum);
+      }
+
+      {
+         auto cbrdc = ityr::make_checkout(sbrdc, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cbrdc) {
+            sum += v;
+         }
+         printf("brdc: %llu\n", sum);
+      }
+
+      {
+         auto csendc = ityr::make_checkout(ssendc, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: csendc) {
+            sum += v;
+         }
+         printf("send#: %llu\n", sum);
+      }
+
+      {
+         auto crecvc = ityr::make_checkout(srcvc, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: crecvc) {
+            sum += v;
+         }
+         printf("recv#: %llu\n", sum);
+      }
+   });
    ityr::fini();
 }
 
 uint64_t fib(const uint64_t n) {
-   if (n <= 2) return 1;
+   // printf("fib fs: %llu\n", ityr::ito::CURRENT_CONTEXT_FRAME_SIZE);
 
-   const auto [a, b] = ityr::parallel_invoke(
-      [=] { return fib(n-1); },
-      [=] { return fib(n-2); }
-   );
+   if (n <= 2)
+      return 1;
+
+   const auto [a, b] = ityr::parallel_invoke([=] { return fib(n - 1); }, [=] { return fib(n - 2); });
 
    return a + b;
 }
