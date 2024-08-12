@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
       ityr::global_span<std::size_t> s_stolen_count(stolen_count), s_stolen_size(stolen_size);
 
       ityr::coll_exec([=]() {
+         printf("%d stole %llu tasks", ityr::my_rank(), ityr::ito::STOLEN_FRAMES_COUNT);
          auto c_stolen_size = ityr::make_checkout(s_stolen_size, ityr::checkout_mode::read_write);
          c_stolen_size[ityr::my_rank()] = ityr::ito::STOLEN_FRAMES_SIZE;
 
@@ -83,7 +84,7 @@ int main(int argc, char** argv) {
             gsize += size[i];
             gcount += count[i];
          }
-         printf("stolen %llu (%llu bytes total, %f bytes avg)", gcount, gsize, (float)gsize / (float)gcount);
+         printf("stolen %llu (%llu bytes total, %f bytes avg)\n", gcount, gsize, (float)gsize / (float)gcount);
       }
 
       {

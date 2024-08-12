@@ -493,7 +493,7 @@ private:
                     we->frame_base, reinterpret_cast<std::byte*>(we->frame_base) + we->frame_size, target_rank);
 
     STOLEN_FRAMES_COUNT++;
-    STOLEN_FRAMES_SIZE++;
+    STOLEN_FRAMES_SIZE += we->frame_size;
     stack_.direct_copy_from(we->frame_base, we->frame_size, target_rank);
 
     wsq_.lock().unlock(target_rank);
