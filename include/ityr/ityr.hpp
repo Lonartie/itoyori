@@ -217,6 +217,170 @@ inline void profiler_flush() {
   common::profiler::flush();
   ito::dag_prof_print();
   ori::cache_prof_print();
+
+  // print byte size measurements
+  ityr::root_exec([=]() -> void {
+      ityr::global_vector<std::size_t> get(ityr::n_ranks()), put(ityr::n_ranks()), cas(ityr::n_ranks()),
+            faa(ityr::n_ranks()), faog(ityr::n_ranks()), faop(ityr::n_ranks()), send(ityr::n_ranks()),
+            recv(ityr::n_ranks()), brdc(ityr::n_ranks()), rcvc(ityr::n_ranks()), sendc(ityr::n_ranks());
+      ityr::global_span<std::size_t> sget(get), sput(put), scas(cas), sfaa(faa), sfaog(faog), sfaop(faop), ssend(send),
+            srecv(recv), sbrdc(brdc), srcvc(rcvc), ssendc(sendc);
+
+      ityr::global_vector<std::size_t> stolen_count(ityr::n_ranks()), stolen_size(ityr::n_ranks());
+      ityr::global_span<std::size_t> s_stolen_count(stolen_count), s_stolen_size(stolen_size);
+
+      ityr::coll_exec([=]() {
+         // printf("%d stole %llu tasks", ityr::my_rank(), ityr::ito::STOLEN_FRAMES_COUNT);
+         auto c_stolen_size = ityr::make_checkout(s_stolen_size.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         c_stolen_size[0] = ityr::ito::STOLEN_FRAMES_SIZE;
+
+         auto c_stolen_count = ityr::make_checkout(s_stolen_count.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         c_stolen_count[0] = ityr::ito::STOLEN_FRAMES_COUNT;
+
+         auto cget = ityr::make_checkout(sget.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         cget[0] = ityr::common::RMA_GET_DATA_SIZE;
+
+         auto cput = ityr::make_checkout(sput.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         cput[0] = ityr::common::RMA_PUT_DATA_SIZE;
+
+         auto ccas = ityr::make_checkout(scas.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         ccas[0] = ityr::common::RMA_CAS_DATA_SIZE;
+
+         auto cfaa = ityr::make_checkout(sfaa.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         cfaa[0] = ityr::common::RMA_FAA_DATA_SIZE;
+
+         auto cfaog = ityr::make_checkout(sfaog.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         cfaog[0] = ityr::common::RMA_FAO_GET_DATA_SIZE;
+
+         auto cfaop = ityr::make_checkout(sfaop.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         cfaop[0] = ityr::common::RMA_FAO_PUT_DATA_SIZE;
+
+         auto csend = ityr::make_checkout(ssend.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         csend[0] = ityr::common::MPI_SEND_SIZE;
+
+         auto crecv = ityr::make_checkout(srecv.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         crecv[0] = ityr::common::MPI_RECV_SIZE;
+
+         auto cbrdc = ityr::make_checkout(sbrdc.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         cbrdc[0] = ityr::common::MPI_BROADCAST_SIZE;
+
+         auto crecvc = ityr::make_checkout(srcvc.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         crecvc[0] = ityr::common::MPI_RECV_SIZE;
+
+         auto csendc = ityr::make_checkout(ssendc.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         csendc[0] = ityr::common::MPI_BROADCAST_SIZE;
+      });
+
+      {
+         auto size = ityr::make_checkout(s_stolen_size.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         auto count = ityr::make_checkout(s_stolen_count.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         std::size_t gsize = 0, gcount = 0;
+         for (int i = 0; i < ityr::n_ranks(); i++) {
+            gsize += size[i];
+            gcount += count[i];
+         }
+         printf("stolen %llu (%llu bytes total, %f bytes avg)\n", gcount, gsize, (float)gsize / (float)gcount);
+      }
+
+      {
+         auto cget = ityr::make_checkout(sget.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cget) {
+            sum += v;
+         }
+         printf("get: %llu\n", sum);
+      }
+
+      {
+         auto cput = ityr::make_checkout(sput.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cput) {
+            sum += v;
+         }
+         printf("put: %llu\n", sum);
+      }
+
+      {
+         auto ccas = ityr::make_checkout(scas.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: ccas) {
+            sum += v;
+         }
+         printf("cas: %llu\n", sum);
+      }
+
+      {
+         auto cfaa = ityr::make_checkout(sfaa.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cfaa) {
+            sum += v;
+         }
+         printf("faa: %llu\n", sum);
+      }
+
+      {
+         auto cfaog = ityr::make_checkout(sfaog.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cfaog) {
+            sum += v;
+         }
+         printf("faog: %llu\n", sum);
+      }
+
+      {
+         auto cfaop = ityr::make_checkout(sfaop.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cfaop) {
+            sum += v;
+         }
+         printf("faop: %llu\n", sum);
+      }
+
+      {
+         auto csend = ityr::make_checkout(ssend.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: csend) {
+            sum += v;
+         }
+         printf("send: %llu\n", sum);
+      }
+
+      {
+         auto crecv = ityr::make_checkout(srecv.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: crecv) {
+            sum += v;
+         }
+         printf("recv: %llu\n", sum);
+      }
+
+      {
+         auto cbrdc = ityr::make_checkout(sbrdc.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: cbrdc) {
+            sum += v;
+         }
+         printf("brdc: %llu\n", sum);
+      }
+
+      {
+         auto csendc = ityr::make_checkout(ssendc.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: csendc) {
+            sum += v;
+         }
+         printf("send#: %llu\n", sum);
+      }
+
+      {
+         auto crecvc = ityr::make_checkout(srcvc.data() + ityr::my_rank(), 1, ityr::checkout_mode::read_write);
+         uint64_t sum = 0;
+         for (auto& v: crecvc) {
+            sum += v;
+         }
+         printf("recv#: %llu\n", sum);
+      }
+   });
 }
 
 /**
