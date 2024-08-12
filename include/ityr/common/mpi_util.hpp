@@ -30,6 +30,7 @@ template <>           inline MPI_Datatype mpi_type<void*>()         { return mpi
   static std::size_t MPI_BROADCAST_SIZE = 0;
   static std::size_t MPI_SEND_CALLS = 0;
   static std::size_t MPI_RECV_CALLS = 0;
+  static std::size_t MPI_BROADCAST_CALLS = 0;
 
 inline int mpi_comm_rank(MPI_Comm comm) {
   int rank;
@@ -149,6 +150,7 @@ inline void mpi_bcast(T*          buf,
                       int         root_rank,
                       MPI_Comm    comm) {
   MPI_BROADCAST_SIZE += sizeof(T) * count;
+  MPI_BROADCAST_CALLS++;
   MPI_Bcast(buf,
             sizeof(T) * count,
             MPI_BYTE,

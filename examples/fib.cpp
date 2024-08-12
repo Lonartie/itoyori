@@ -31,7 +31,16 @@ int main(int argc, char** argv) {
       ityr::global_span<std::size_t> sget(get), sput(put), scas(cas), sfaa(faa), sfaog(faog), sfaop(faop), ssend(send),
             srecv(recv), sbrdc(brdc), srcvc(rcvc), ssendc(sendc);
 
+      ityr::global_vector<std::size_t> stolen_count(ityr::n_ranks()), stolen_size(ityr::n_ranks());
+      ityr::global_span<std::size_t> s_stolen_count(stolen_count), s_stolen_size(stolen_size);
+
       ityr::coll_exec([=]() {
+         auto c_stolen_size = ityr::make_checkout(s_stolen_size, ityr::checkout_mode::read_write);
+         c_stolen_size[ityr::my_rank()] = ityr::ito::STOLEN_FRAMES_SIZE;
+
+         auto c_stolen_count = ityr::make_checkout(s_stolen_count, ityr::checkout_mode::read_write);
+         c_stolen_count[ityr::my_rank()] = ityr::ito::STOLEN_FRAMES_COUNT;
+
          auto cget = ityr::make_checkout(sget, ityr::checkout_mode::read_write);
          cget[ityr::my_rank()] = ityr::common::RMA_GET_DATA_SIZE;
 
@@ -65,6 +74,17 @@ int main(int argc, char** argv) {
          auto csendc = ityr::make_checkout(ssendc, ityr::checkout_mode::read_write);
          csendc[ityr::my_rank()] = ityr::common::MPI_BROADCAST_SIZE;
       });
+
+      {
+         auto size = ityr::make_checkout(s_stolen_size, ityr::checkout_mode::read_write);
+         auto count = ityr::make_checkout(s_stolen_count, ityr::checkout_mode::read_write);
+         std::size_t gsize = 0, gcount = 0;
+         for (int i = 0; i < ityr::n_ranks(); i++) {
+            gsize += size[i];
+            gcount += count[i];
+         }
+         printf("stolen %llu (%llu bytes total, %f bytes avg)", gcount, gsize, (float)gsize / (float)gcount);
+      }
 
       {
          auto cget = ityr::make_checkout(sget, ityr::checkout_mode::read_write);

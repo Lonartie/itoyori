@@ -18,6 +18,8 @@
 namespace ityr::ito {
 
   static std::size_t CURRENT_CONTEXT_FRAME_SIZE = 0;
+  static std::size_t STOLEN_FRAMES_SIZE = 0;
+  static std::size_t STOLEN_FRAMES_COUNT = 0;
 
 class scheduler_randws {
 public:
@@ -490,6 +492,8 @@ private:
     common::verbose("Steal context frame [%p, %p) from rank %d",
                     we->frame_base, reinterpret_cast<std::byte*>(we->frame_base) + we->frame_size, target_rank);
 
+    STOLEN_FRAMES_COUNT++;
+    STOLEN_FRAMES_SIZE++;
     stack_.direct_copy_from(we->frame_base, we->frame_size, target_rank);
 
     wsq_.lock().unlock(target_rank);
