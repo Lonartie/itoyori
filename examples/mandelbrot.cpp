@@ -22,7 +22,7 @@ template <size_t Size, size_t width, size_t height>
 std::array<int, Size> calc_image(int max_iter, int begin = 0, int end = Size) {
    std::array<int, Size> result;
 
-   if constexpr (Size <= 32) {
+   if constexpr (Size <= 4) {
       for (int i = begin; i < end; i++) {
          const int x = i % width;
          const int y = i / width;
@@ -61,8 +61,8 @@ std::array<int, Size> calc_image(int max_iter, int begin = 0, int end = Size) {
 
 // Hauptprogramm
 int main(int argc, char** argv) {
-   constexpr int width = 256;
-   constexpr int height = 256;
+   constexpr int width = 128;
+   constexpr int height = 128;
    int loops = argc > 1 ? std::stoi(argv[1]) : 500;
    int max_iter = argc > 2 ? std::stoi(argv[2]) : 10'000;
 
