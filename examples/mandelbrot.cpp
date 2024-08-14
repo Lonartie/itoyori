@@ -18,8 +18,8 @@ int mandelbrot(double real, double imag, int max_iter) {
 
 int CALCULATED = 0;
 
-template <size_t Size, size_t width, size_t height, size_t max_iter>
-std::array<int, Size> calc_image(int begin = 0, int end = Size) {
+template <size_t Size, size_t width, size_t height>
+std::array<int, Size> calc_image(int max_iter, int begin = 0, int end = Size) {
    std::array<int, Size> result;
 
    if constexpr (Size <= 32) {
@@ -37,10 +37,10 @@ std::array<int, Size> calc_image(int begin = 0, int end = Size) {
       static_assert(Win * 4 == Size);
 
       auto parts = ityr::parallel_invoke(
-         [begin]{ return calc_image<Win, width, height, max_iter>(begin + 0 * Win, begin + 1 * Win); },
-         [begin]{ return calc_image<Win, width, height, max_iter>(begin + 1 * Win, begin + 2 * Win); },
-         [begin]{ return calc_image<Win, width, height, max_iter>(begin + 2 * Win, begin + 3 * Win); },
-         [begin]{ return calc_image<Win, width, height, max_iter>(begin + 3 * Win, begin + 4 * Win); }
+         [begin, max_iter]{ return calc_image<Win, width, height>(max_iter, begin + 0 * Win, begin + 1 * Win); },
+         [begin, max_iter]{ return calc_image<Win, width, height>(max_iter, begin + 1 * Win, begin + 2 * Win); },
+         [begin, max_iter]{ return calc_image<Win, width, height>(max_iter, begin + 2 * Win, begin + 3 * Win); },
+         [begin, max_iter]{ return calc_image<Win, width, height>(max_iter, begin + 3 * Win, begin + 4 * Win); }
       );
 
       for (int i = 0; i < 4; i++) {
@@ -63,19 +63,21 @@ std::array<int, Size> calc_image(int begin = 0, int end = Size) {
 int main(int argc, char** argv) {
    constexpr int width = 256;
    constexpr int height = 256;
-   constexpr int max_iter = 10'000;
+   int loops = argc > 1 ? std::stoi(argv[1]) : 500;
+   int max_iter = argc > 2 ? std::stoi(argv[2]) : 10'000;
 
    ityr::init();
    ityr::profiler_begin();
 
-   ityr::root_exec([]() -> void {
-      const auto result = calc_image<width * height, width, height, max_iter>();
-
-      uint64_t sum = 0;
-      for (auto v : result) {
-         sum += v;
+   ityr::root_exec([loops, max_iter]() -> void {
+      for (int i = 0; i < loops; i++) {
+         const auto result = calc_image<width * height, width, height>(max_iter);
+         uint64_t sum = 0;
+         for (auto v : result) {
+            sum += v;
+         }
+         printf("iteration #%d: %llu\n", i, sum);
       }
-      printf("SUM = %llu\nCALC = %d\n", sum, CALCULATED);
    });
 
    ityr::profiler_end();
