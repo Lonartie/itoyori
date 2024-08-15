@@ -1,8 +1,8 @@
 #include <array>
-#include <stdio.h>
 #include <cmath>
 #include <cstdlib>
 #include <ityr/ityr.hpp>
+#include <stdio.h>
 
 constexpr int N = 1'024;
 constexpr float G = 6.67430e-11;
@@ -45,7 +45,7 @@ Vec3 compute_gravitational_force(const Body& a, const Body& b) {
    return diff * (force_mag / dist);
 }
 
-template <size_t Size = N>
+template<size_t Size = N>
 std::array<Vec3, N> calc_forces(std::array<Body, N> bodies, int begin = 0, int end = Size) {
    std::array<Vec3, N> forces = {};
 
@@ -62,19 +62,18 @@ std::array<Vec3, N> calc_forces(std::array<Body, N> bodies, int begin = 0, int e
       static_assert(Win * 4 == Size);
 
       auto parts = ityr::parallel_invoke(
-         [begin, bodies]{ return calc_forces<Win>(bodies, begin + 0 * Win, begin + 1 * Win); },
-         [begin, bodies]{ return calc_forces<Win>(bodies, begin + 1 * Win, begin + 2 * Win); },
-         [begin, bodies]{ return calc_forces<Win>(bodies, begin + 2 * Win, begin + 3 * Win); },
-         [begin, bodies]{ return calc_forces<Win>(bodies, begin + 3 * Win, begin + 4 * Win); }
-      );
+            [begin, bodies] { return calc_forces<Win>(bodies, begin + 0 * Win, begin + 1 * Win); },
+            [begin, bodies] { return calc_forces<Win>(bodies, begin + 1 * Win, begin + 2 * Win); },
+            [begin, bodies] { return calc_forces<Win>(bodies, begin + 2 * Win, begin + 3 * Win); },
+            [begin, bodies] { return calc_forces<Win>(bodies, begin + 3 * Win, begin + 4 * Win); });
 
       for (int i = 0; i < 4; i++) {
          for (int n = 0; n < N; n++) {
-            std::array<Vec3, N>* part =
-               i == 0 ? &std::get<0>(parts) :
-               i == 1 ? &std::get<1>(parts) :
-               i == 2 ? &std::get<2>(parts) :
-               i == 3 ? &std::get<3>(parts) : nullptr;
+            std::array<Vec3, N>* part = i == 0   ? &std::get<0>(parts)
+                                        : i == 1 ? &std::get<1>(parts)
+                                        : i == 2 ? &std::get<2>(parts)
+                                        : i == 3 ? &std::get<3>(parts)
+                                                 : nullptr;
             forces[n] += (*part)[n];
          }
       }
@@ -83,8 +82,9 @@ std::array<Vec3, N> calc_forces(std::array<Body, N> bodies, int begin = 0, int e
    return forces;
 }
 
-template <size_t Size = N>
-std::array<Body, Size> calc_bodies(std::array<Body, N> bodies, std::array<Vec3, N> forces, int begin = 0, int end = Size) {
+template<size_t Size = N>
+std::array<Body, Size> calc_bodies(std::array<Body, N> bodies, std::array<Vec3, N> forces, int begin = 0,
+                                   int end = Size) {
    std::array<Body, Size> result = {};
 
    if constexpr (Size <= 4) {
@@ -99,19 +99,18 @@ std::array<Body, Size> calc_bodies(std::array<Body, N> bodies, std::array<Vec3, 
       static_assert(Win * 4 == Size);
 
       auto parts = ityr::parallel_invoke(
-         [begin, bodies, forces]{ return calc_bodies<Win>(bodies, forces, begin + 0 * Win, begin + 1 * Win); },
-         [begin, bodies, forces]{ return calc_bodies<Win>(bodies, forces, begin + 1 * Win, begin + 2 * Win); },
-         [begin, bodies, forces]{ return calc_bodies<Win>(bodies, forces, begin + 2 * Win, begin + 3 * Win); },
-         [begin, bodies, forces]{ return calc_bodies<Win>(bodies, forces, begin + 3 * Win, begin + 4 * Win); }
-      );
+            [begin, bodies, forces] { return calc_bodies<Win>(bodies, forces, begin + 0 * Win, begin + 1 * Win); },
+            [begin, bodies, forces] { return calc_bodies<Win>(bodies, forces, begin + 1 * Win, begin + 2 * Win); },
+            [begin, bodies, forces] { return calc_bodies<Win>(bodies, forces, begin + 2 * Win, begin + 3 * Win); },
+            [begin, bodies, forces] { return calc_bodies<Win>(bodies, forces, begin + 3 * Win, begin + 4 * Win); });
 
       for (int i = 0; i < 4; i++) {
          for (int n = 0; n < Win; n++) {
-            std::array<Body, Win>* part =
-               i == 0 ? &std::get<0>(parts) :
-               i == 1 ? &std::get<1>(parts) :
-               i == 2 ? &std::get<2>(parts) :
-               i == 3 ? &std::get<3>(parts) : nullptr;
+            std::array<Body, Win>* part = i == 0   ? &std::get<0>(parts)
+                                          : i == 1 ? &std::get<1>(parts)
+                                          : i == 2 ? &std::get<2>(parts)
+                                          : i == 3 ? &std::get<3>(parts)
+                                                   : nullptr;
             int index = i * Win + n;
             result[index] = (*part)[n];
          }
@@ -128,6 +127,7 @@ std::array<Body, N> update_bodies(std::array<Body, N> bodies) {
 
 int main(int argc, char** argv) {
    ityr::init();
+   ityr::profiler_begin();
 
    int loops = argc > 1 ? std::stoi(argv[1]) : 1'000;
 
@@ -136,22 +136,20 @@ int main(int argc, char** argv) {
       std::srand(42);
 
       for (int i = 0; i < N; ++i) {
-         Vec3 pos = {
-            (float) (rand() % 150),
-            (float) (rand() % 150),
-            (float) (rand() % 150)
-         };
+         Vec3 pos = {(float) (rand() % 150), (float) (rand() % 150), (float) (rand() % 150)};
          float mass = rand() % 100'000'000'000 + 100'000'000;
          bodies[i] = {pos, {0.0, 0.0, 0.0}, mass};
       }
 
       for (int step = 0; step < loops; ++step) {
          printf("iteration %d#", step);
-         printf(" %f,%f,%f\n", bodies[0].position.x,bodies[0].position.y,bodies[0].position.z);
+         printf(" %f,%f,%f\n", bodies[0].position.x, bodies[0].position.y, bodies[0].position.z);
          bodies = update_bodies(bodies);
       }
    });
 
+   ityr::profiler_end();
+   ityr::profiler_flush();
    ityr::fini();
    return 0;
 }
