@@ -226,10 +226,18 @@ inline void profiler_flush() {
       ityr::global_span<std::size_t> sget(get), sput(put), scas(cas), sfaa(faa), sfaog(faog), sfaop(faop), ssend(send),
             srecv(recv), sbrdc(brdc), srcvc(rcvc), ssendc(sendc);
 
-      ityr::global_vector<std::size_t> stolen_count(ityr::n_ranks()), stolen_size(ityr::n_ranks());
-      ityr::global_span<std::size_t> s_stolen_count(stolen_count), s_stolen_size(stolen_size);
+      ityr::global_vector<std::size_t> stolen_count(ityr::n_ranks()), stolen_size(ityr::n_ranks()), min(ityr::n_ranks()), max(ityr::n_ranks());
+      ityr::global_span<std::size_t> s_stolen_count(stolen_count), s_stolen_size(stolen_size), smin(min), smax(max);
 
       ityr::coll_exec([=]() {
+         // printf("%d stole %llu tasks", ityr::my_rank(), ityr::ito::STOLEN_FRAMES_COUNT);
+         auto cmin = ityr::make_checkout(smin.data() + ityr::my_rank(), 1, ityr::checkout_mode::write);
+         cmin[0] = ityr::ito::STOLEN_FRAMES_SIZE;
+
+         // printf("%d stole %llu tasks", ityr::my_rank(), ityr::ito::STOLEN_FRAMES_COUNT);
+         auto cmax = ityr::make_checkout(smax.data() + ityr::my_rank(), 1, ityr::checkout_mode::write);
+         cmax[0] = ityr::ito::STOLEN_FRAMES_SIZE;
+
          // printf("%d stole %llu tasks", ityr::my_rank(), ityr::ito::STOLEN_FRAMES_COUNT);
          auto c_stolen_size = ityr::make_checkout(s_stolen_size.data() + ityr::my_rank(), 1, ityr::checkout_mode::write);
          c_stolen_size[0] = ityr::ito::STOLEN_FRAMES_SIZE;
@@ -274,12 +282,17 @@ inline void profiler_flush() {
       {
          auto size = ityr::make_checkout(s_stolen_size, ityr::checkout_mode::read);
          auto count = ityr::make_checkout(s_stolen_count, ityr::checkout_mode::read);
+         auto mins = ityr::make_checkout(smin, ityr::checkout_mode::read);
+         auto maxs = ityr::make_checkout(smax, ityr::checkout_mode::read);
          std::size_t gsize = 0, gcount = 0;
+         std::size_t min = std::numeric_limits<std::size_t>::max(), max = 0;
          for (int i = 0; i < ityr::n_ranks(); i++) {
             gsize += size[i];
             gcount += count[i];
+            min = std::min(min, mins[i]);
+            max = std::max(max, maxs[i]);
          }
-         printf("stolen %llu (%llu bytes total, %f bytes avg)\n", gcount, gsize, (float)gsize / (float)gcount);
+         printf("stolen %llu (%llu bytes total, %f bytes avg, %llu min, %llu max)\n", gcount, gsize, (float)gsize / (float)gcount, min, max);
       }
 
       {

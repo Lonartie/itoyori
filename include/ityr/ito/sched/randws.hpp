@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include "ityr/common/allocator.hpp"
 #include "ityr/common/logger.hpp"
 #include "ityr/common/mpi_rma.hpp"
@@ -19,7 +20,10 @@ namespace ityr::ito {
 
   static std::size_t CURRENT_CONTEXT_FRAME_SIZE = 0;
   static std::size_t STOLEN_FRAMES_SIZE = 0;
+  static std::size_t STOLEN_FRAMES_MIN_SIZE = std::numeric_limits<std::size_t>::max();
+  static std::size_t STOLEN_FRAMES_MAX_SIZE = 0;
   static std::size_t STOLEN_FRAMES_COUNT = 0;
+  static bool PRINT = false;
 
 class scheduler_randws {
 public:
@@ -494,6 +498,8 @@ private:
 
     STOLEN_FRAMES_COUNT++;
     STOLEN_FRAMES_SIZE += we->frame_size;
+    STOLEN_FRAMES_MIN_SIZE = std::min(STOLEN_FRAMES_MIN_SIZE, we->frame_size);
+    STOLEN_FRAMES_MAX_SIZE = std::max(STOLEN_FRAMES_MAX_SIZE, we->frame_size);
     stack_.direct_copy_from(we->frame_base, we->frame_size, target_rank);
 
     wsq_.lock().unlock(target_rank);
@@ -503,9 +509,17 @@ private:
     common::profiler::switch_phase<prof_phase_sched_loop, prof_phase_sched_resume_stolen>();
 
     context_frame* next_cf = reinterpret_cast<context_frame*>(we->frame_base);
-    suspend([&](context_frame* cf) {
+    auto switch_to_begin = common::wallclock::gettime_ns();
+    suspend([&
+      // ,s = we->frame_size, switch_to_begin
+      ](context_frame* cf) {
+      auto switch_to_end = common::wallclock::gettime_ns();
       sched_cf_ = cf;
       context::clear_parent_frame(next_cf);
+      // if (common::topology::my_rank() == 0) {
+      //   printf("(time = %llu) frame-size: %-8llu", switch_to_end - switch_to_begin, s);
+      //   PRINT = true;
+      // }
       resume(next_cf);
     });
   }

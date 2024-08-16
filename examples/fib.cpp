@@ -27,12 +27,20 @@ int main(int argc, char** argv) {
 }
 
 uint64_t fib(const uint64_t n) {
-   // printf("fib fs: %llu\n", ityr::ito::CURRENT_CONTEXT_FRAME_SIZE);
+   // if (ityr::ito::PRINT && ityr::my_rank() == 0) {
+   //    printf("fib(%llu) begin\n", n);
+   //    ityr::ito::PRINT = false;
+   // }
 
    if (n <= 2)
       return 1;
 
    const auto [a, b] = ityr::parallel_invoke([=] { return fib(n - 1); }, [=] { return fib(n - 2); });
+
+   // if (ityr::ito::PRINT && ityr::my_rank() == 0) {
+   //    printf("fib(%llu) continue\n", n);
+   //    ityr::ito::PRINT = false;
+   // }
 
    return a + b;
 }
